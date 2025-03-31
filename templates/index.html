@@ -29,7 +29,6 @@
             -ms-overflow-style: none;  
         }
 
-        
         /* Chrome/Safari*/
         .chat-box::-webkit-scrollbar {
             width: 0;
@@ -66,13 +65,36 @@
         }
 
         #userInput::placeholder {
-            color: #ffffff !important;  /* White placeholder text */
-            opacity: 0.8;  /* Slightly transparent */
+            color: #ffffff !important;
+            opacity: 0.8;
         }
         
         .btn-primary {
             background-color: var(--primary);
             border: none;
+        }
+
+        /* ===== NEW ADDITIONS ===== */
+        /* Loading Spinner */
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: var(--primary);
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-container {
+            text-align: center;
+            padding: 10px;
+            color: var(--primary);
         }
     </style>
 </head>
@@ -99,10 +121,18 @@
             const message = userInput.value.trim();
             if (!message) return;
 
-            // User message display
             const chatBox = document.getElementById('chatBox');
-            chatBox.innerHTML += `<div class="user-msg">You: ${message}</div>`;
+            
+            // Display USER message (no "You:" prefix)
+            chatBox.innerHTML += `<div class="user-msg">${message}</div>`;
             userInput.value = '';
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            // Show loading spinner
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = 'loading-container';
+            loadingDiv.innerHTML = `<div class="loading-spinner"></div> Thinking...`;
+            chatBox.appendChild(loadingDiv);
             chatBox.scrollTop = chatBox.scrollHeight;
 
             // API Call to Flask
@@ -113,14 +143,18 @@
             })
             .then(response => response.json())
             .then(data => {
+                // Remove loading spinner
+                chatBox.removeChild(loadingDiv);
+
                 if (data.error) {
-                    chatBox.innerHTML += `<div class="bot-msg" style="color: #ff6b6b;">Error: ${data.error}</div>`;
+                    chatBox.innerHTML += `<div class="bot-msg" style="color: #ff6b6b;">${data.error}</div>`;
                 } else {
-                    chatBox.innerHTML += `<div class="bot-msg">Assistant: ${data.response}</div>`;
+                    chatBox.innerHTML += `<div class="bot-msg">${data.response}</div>`;
                 }
                 chatBox.scrollTop = chatBox.scrollHeight;
             })
             .catch(error => {
+                chatBox.removeChild(loadingDiv);
                 chatBox.innerHTML += `<div class="bot-msg" style="color: #ff6b6b;">Error: ${error.message}</div>`;
                 chatBox.scrollTop = chatBox.scrollHeight;
             });
