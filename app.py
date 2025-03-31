@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, render_template, request, jsonify
 import google.generativeai as genai
 from flask_cors import CORS  # Added for CORS
 from dotenv import load_dotenv  # For .env file
@@ -12,8 +12,8 @@ CORS(app)
 
 
 @app.route("/")
-def serve_html():
-    return send_from_directory(".", "index.html")  # "." = current folder
+def home():
+    return render_template("index.html")  
 
 def setup_gemini(api_key):
     genai.configure(api_key=api_key)
