@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Health Chat</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #1a1a2e;
+            --card-dark: #16213e;
+            --primary: #0f4c75;
+            --text-light: #ffffff;
+            --bot-bubble: #4e4e50;
+        }
+        
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            min-height: 100vh;
+        }
+        
+        .chat-box {
+            height: 400px;
+            overflow-y: auto; 
+            border: 1px solid var(--primary);
+            padding: 15px;
+            background-color: var(--card-dark);
+            border-radius: 10px;
+            scrollbar-width: none;  
+            -ms-overflow-style: none;  
+        }
+
+        
+        /* Chrome/Safari*/
+        .chat-box::-webkit-scrollbar {
+            width: 0;
+            height: 0;
+            display: none;
+            background: transparent;
+        }
+        
+        .user-msg {
+            background: var(--primary);
+            color: white;
+            padding: 10px 15px;
+            margin: 10px 0;
+            border-radius: 18px 18px 0 18px;
+            max-width: 80%;
+            margin-left: auto;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        
+        .bot-msg {
+            background: var(--bot-bubble);
+            color: white;
+            padding: 10px 15px;
+            margin: 10px 0;
+            border-radius: 18px 18px 18px 0;
+            max-width: 80%;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        
+        #userInput {
+            background-color: #2d3436;
+            color: white;
+            border: 1px solid var(--primary);
+        }
+        
+        .btn-primary {
+            background-color: var(--primary);
+            border: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <h3 class="mb-4 text-center">Health Assistant</h3>
+        <div class="chat-box mb-3" id="chatBox"></div>
+        <div class="input-group">
+            <input type="text" id="userInput" class="form-control" placeholder="Ask a health question..." autocomplete="off">
+            <button class="btn btn-primary" onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+
+    <script>
+        // If user press enter key
+        document.getElementById('userInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        function sendMessage() {
+            const userInput = document.getElementById('userInput');
+            const message = userInput.value.trim();
+            if (!message) return;
+
+            // User message display
+            const chatBox = document.getElementById('chatBox');
+            chatBox.innerHTML += `<div class="user-msg">You: ${message}</div>`;
+            userInput.value = '';
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            // API Call to Flask
+            fetch('http://localhost:5000/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: message })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    chatBox.innerHTML += `<div class="bot-msg" style="color: #ff6b6b;">Error: ${data.error}</div>`;
+                } else {
+                    chatBox.innerHTML += `<div class="bot-msg">Assistant: ${data.response}</div>`;
+                }
+                chatBox.scrollTop = chatBox.scrollHeight;
+            })
+            .catch(error => {
+                chatBox.innerHTML += `<div class="bot-msg" style="color: #ff6b6b;">Error: ${error.message}</div>`;
+                chatBox.scrollTop = chatBox.scrollHeight;
+            });
+        }
+    </script>
+</body>
+</html>
