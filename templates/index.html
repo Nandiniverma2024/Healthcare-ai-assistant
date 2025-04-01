@@ -2,163 +2,49 @@
 <html>
 <head>
     <title>Health Chat AI Assistant</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        :root {
-            --bg-dark: #1a1a2e;
-            --card-dark: #16213e;
-            --primary: #0f4c75;
-            --text-light: #ffffff;
-            --bot-bubble: #4e4e50;
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'bg-dark': '#1a1a2e',
+                        'card-dark': '#16213e',
+                        'primary': '#0f4c75',
+                        'bot-bubble': '#4e4e50',
+                    },
+                    animation: {
+                        'spin-slow': 'spin 1s ease-in-out infinite',
+                    }
+                }
+            }
         }
-        
-        body {
-            background-color: var(--bg-dark);
-            color: var(--text-light);
-            min-height: 100vh;
-        }
-        
-        .chat-box {
-            height: 400px;
-            overflow-y: auto; 
-            border: 1px solid var(--primary);
-            padding: 15px;
-            background-color: var(--card-dark);
-            border-radius: 10px;
-            scrollbar-width: none;  
-            -ms-overflow-style: none;  
-        }
-
-        /* Chrome/Safari*/
-        .chat-box::-webkit-scrollbar {
-            width: 0;
-            height: 0;
-            display: none;
-            background: transparent;
-        }
-        
-        .user-msg {
-            background: var(--primary);
-            color: white;
-            padding: 10px 15px;
-            margin: 10px 0;
-            border-radius: 18px 18px 0 18px;
-            max-width: 80%;
-            margin-left: auto;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-        }
-        
-        .bot-msg {
-            background: var(--bot-bubble);
-            color: white;
-            padding: 10px 15px;
-            margin: 10px 0;
-            border-radius: 18px 18px 18px 0;
-            max-width: 80%;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-        }
-        
-        #userInput {
-            background-color: #2d3436;
-            color: white;
-            border: 1px solid var(--primary);
-        }
-
-        #userInput::placeholder {
-            color: #ffffff !important;
-            opacity: 0.8;
-        }
-        
-        .btn-primary {
-            background-color: var(--primary);
-            border: none;
-        }
-
-        /* ===== NEW ADDITIONS ===== */
-        /* Loading Spinner */
-        .loading-spinner {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid rgba(255, 255, 255, 0.3);
-            border-radius: 50%;
-            border-top-color: var(--primary);
-            animation: spin 1s ease-in-out infinite;
-            margin-right: 10px;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        .loading-container {
-            text-align: center;
-            padding: 10px;
-            color: var(--primary);
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .scrollbar-hide::-webkit-scrollbar {
+                display: none;
+            }
+            .scrollbar-hide {
+                -ms-overflow-style: none;
+                scrollbar-width: none;
+            }
         }
     </style>
 </head>
-<body>
-    <div class="container mt-5">
-        <h3 class="mb-4 text-center">Health Assistant</h3>
-        <div class="chat-box mb-3" id="chatBox"></div>
-        <div class="input-group">
-            <input type="text" id="userInput" class="form-control" placeholder="Ask a health question..." autocomplete="off">
-            <button class="btn btn-primary" onclick="sendMessage()">Send</button>
+<body class="bg-bg-dark min-h-screen text-white">
+    <div class="container mx-auto mt-5 px-4 max-w-3xl">
+        <h3 class="mb-4 text-center text-2xl font-semibold">Health Assistant</h3>
+        <div class="h-[400px] overflow-y-auto border border-primary p-4 bg-card-dark rounded-xl scrollbar-hide" id="chatBox"></div>
+        <div class="flex mt-3">
+            <input type="text" id="userInput" class="flex-grow px-4 py-2 bg-[#2d3436] text-white border border-primary rounded-l-lg focus:outline-none focus:ring-1 focus:ring-primary placeholder-white/80" placeholder="Ask a health question..." autocomplete="off">
+            <button class="px-4 py-2 bg-primary text-white rounded-r-lg hover:bg-opacity-90 focus:outline-none" id="sendButton">Send</button>
         </div>
     </div>
 
-    <script>
-        // If user press enter key
-        document.getElementById('userInput').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                sendMessage();
-            }
-        });
-
-        function sendMessage() {
-            const userInput = document.getElementById('userInput');
-            const message = userInput.value.trim();
-            if (!message) return;
-
-            const chatBox = document.getElementById('chatBox');
-            
-            // Display USER message (no "You:" prefix)
-            chatBox.innerHTML += `<div class="user-msg">${message}</div>`;
-            userInput.value = '';
-            chatBox.scrollTop = chatBox.scrollHeight;
-
-            // Show loading spinner
-            const loadingDiv = document.createElement('div');
-            loadingDiv.className = 'loading-container';
-            loadingDiv.innerHTML = `<div class="loading-spinner"></div> Thinking...`;
-            chatBox.appendChild(loadingDiv);
-            chatBox.scrollTop = chatBox.scrollHeight;
-
-            // API Call to Flask
-            fetch('http://localhost:5000/chat', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message: message })
-            })
-            .then(response => response.json())
-            .then(data => {
-                // Remove loading spinner
-                chatBox.removeChild(loadingDiv);
-
-                if (data.error) {
-                    chatBox.innerHTML += `<div class="bot-msg" style="color: #ff6b6b;">${data.error}</div>`;
-                } else {
-                    chatBox.innerHTML += `<div class="bot-msg">${data.response}</div>`;
-                }
-                chatBox.scrollTop = chatBox.scrollHeight;
-            })
-            .catch(error => {
-                chatBox.removeChild(loadingDiv);
-                chatBox.innerHTML += `<div class="bot-msg" style="color: #ff6b6b;">Error: ${error.message}</div>`;
-                chatBox.scrollTop = chatBox.scrollHeight;
-            });
-        }
-    </script>
+    <!-- Correct path to JavaScript file -->
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>
